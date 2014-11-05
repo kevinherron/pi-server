@@ -15,7 +15,8 @@
 
     <scm>
         <url>https://github.com/kevinherron/pi-server</url>
-        <connection>scm:git:git://github.com/kevinherron/pi-server</connection>
+        <connection>scm:git:ssh://github.com/kevinherron/pi-server</connection>
+        <developerConnection>scm:git:ssh://git@github.com/kevinherron/pi-server.git</developerConnection>
     </scm>
 
     <developers>
