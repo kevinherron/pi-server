@@ -101,9 +101,9 @@
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                         </manifest>
                         <manifestEntries>
-                            <X-Halcyon-Build-Date>${timestamp}</X-Halcyon-Build-Date>
-                            <X-Halcyon-Build-Number>${buildNumber}</X-Halcyon-Build-Number>
-                            <X-Halcyon-Version>${project.version}</X-Halcyon-Version>
+                            <X-PiServer-Build-Date>${timestamp}</X-PiServer-Build-Date>
+                            <X-PiServer-Build-Number>${buildNumber}</X-PiServer-Build-Number>
+                            <X-PiServer-Version>${project.version}</X-PiServer-Version>
                         </manifestEntries>
                     </archive>
                 </configuration>

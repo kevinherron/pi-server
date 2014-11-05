@@ -29,7 +29,7 @@ import com.inductiveautomation.opcua.stack.core.types.structured.BuildInfo;
 
 public class PiServerConfig implements OpcUaServerConfig {
 
-    private static final String PRODUCT_URI = "https://github.com/digitalpetri/pi-server";
+    private static final String PRODUCT_URI = "https://github.com/kevinherron/pi-server";
     private static final String BUILD_DATE_PROPERTY = "X-PiServer-Build-Date";
     private static final String BUILD_NUMBER_PROPERTY = "X-PiServer-Build-Number";
     private static final String SOFTWARE_VERSION_PROPERTY = "X-PiServer-Version";
