@@ -23,10 +23,12 @@ GPIO
 ---------
 GPIO configuration is in `config/gpio-config.json`. Use `config/gpio-config.json.example` as a template.
 
-IMPORTANT: The pin numbering scheme is NOT the same as what you see on the Pi. It's based on the pi4j and wiringpi abstract pin numbering scheme. 
+**IMPORTANT**: The pin numbering scheme is NOT the same as what you see on the Pi. It's based on the pi4j and wiringpi abstract pin numbering scheme. 
 
-Model B Pins: http://pi4j.com/pins/model-b-rev2.html
-Model B+ Pins: http://pi4j.com/pins/model-b-plus.html
+- Model A Pins: http://pi4j.com/pins/model-a-rev2.html
+- Model B r1 Pins: http://pi4j.com/pins/model-b-rev1.html
+- Model B r2 Pins: http://pi4j.com/pins/model-b-rev2.html
+- Model B+ Pins: http://pi4j.com/pins/model-b-plus.html
 
 Running PiServer
 ---------
