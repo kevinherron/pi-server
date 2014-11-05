@@ -32,4 +32,6 @@ GPIO configuration is in `config/gpio-config.json`. Use `config/gpio-config.json
 
 Running PiServer
 ---------
-With the above done and in place, simply invoke `sudo bin/pi-server.sh start`
+With the above done and in place, simply invoke `sudo bin/pi-server.sh start` and wait.
+
+...and wait. Really. It takes 3-4 minutes to start right now. You can tail the logs with `tail -f logs/wrapper.log | cut -d '|' -f 4` and watch for a message about binding endpoints to know when it's started.
