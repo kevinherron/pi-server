@@ -9,10 +9,30 @@
     <artifactId>pi-server</artifactId>
     <version>0.1.0-SNAPSHOT</version>
 
+    <name>PiServer</name>
+    <description>Raspberry Pi OPC-UA Server</description>
+    <url>https://github.com/kevinherron/pi-server</url>
+
     <scm>
-        <url>https://github.com/digitalpetri/pi-ua-server</url>
-        <connection>scm:git:git://github.com/digitalpetri/pi-ua-server</connection>
+        <url>https://github.com/kevinherron/pi-server</url>
+        <connection>scm:git:git://github.com/kevinherron/pi-server</connection>
     </scm>
+
+    <developers>
+        <developer>
+            <id>kevinherron</id>
+            <name>Kevin Herron</name>
+            <email>kevinherron@gmail.com</email>
+        </developer>
+    </developers>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <dependencies>
         <dependency>
