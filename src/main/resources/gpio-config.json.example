@@ -1,0 +1,32 @@
+{
+    "inputs": [
+        {
+            "pin": 0,
+            "name": "MyDigitalInput",
+            "type": "digital",
+            "resistance": "pull-down"
+        },
+        {
+            "pin": 1,
+            "name": "MyAnalogInput",
+            "type": "analog"
+        }
+    ],
+
+    "outputs": [
+        {
+            "pin": 2,
+            "name": "MyDigitalOutput",
+            "type": "digital",
+            "value": 0
+        },
+        {
+            "pin": 3,
+            "name": "MyAnalogOutput",
+            "type": "analog",
+            "value": 0.0
+        }
+    ]
+}
+
+
