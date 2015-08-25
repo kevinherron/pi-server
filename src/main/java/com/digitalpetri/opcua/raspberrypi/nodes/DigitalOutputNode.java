@@ -21,23 +21,23 @@ import java.util.EnumSet;
 import com.digitalpetri.opcua.raspberrypi.GpioConfig;
 import com.digitalpetri.opcua.raspberrypi.GpioConfig.OutputConfig;
 import com.digitalpetri.opcua.raspberrypi.PiNamespace;
-import com.inductiveautomation.opcua.sdk.core.AccessLevel;
-import com.inductiveautomation.opcua.sdk.server.api.UaNamespace;
-import com.inductiveautomation.opcua.sdk.server.model.UaVariableNode;
-import com.inductiveautomation.opcua.stack.core.Identifiers;
-import com.inductiveautomation.opcua.stack.core.types.builtin.DataValue;
-import com.inductiveautomation.opcua.stack.core.types.builtin.LocalizedText;
-import com.inductiveautomation.opcua.stack.core.types.builtin.NodeId;
-import com.inductiveautomation.opcua.stack.core.types.builtin.QualifiedName;
-import com.inductiveautomation.opcua.stack.core.types.builtin.Variant;
-import com.inductiveautomation.opcua.stack.core.types.builtin.unsigned.UByte;
-import com.inductiveautomation.opcua.stack.core.types.builtin.unsigned.UShort;
+import com.digitalpetri.opcua.sdk.core.AccessLevel;
+import com.digitalpetri.opcua.sdk.server.api.UaNamespace;
+import com.digitalpetri.opcua.sdk.server.model.UaVariableNode;
+import com.digitalpetri.opcua.stack.core.Identifiers;
+import com.digitalpetri.opcua.stack.core.types.builtin.DataValue;
+import com.digitalpetri.opcua.stack.core.types.builtin.LocalizedText;
+import com.digitalpetri.opcua.stack.core.types.builtin.NodeId;
+import com.digitalpetri.opcua.stack.core.types.builtin.QualifiedName;
+import com.digitalpetri.opcua.stack.core.types.builtin.Variant;
+import com.digitalpetri.opcua.stack.core.types.builtin.unsigned.UByte;
+import com.digitalpetri.opcua.stack.core.types.builtin.unsigned.UShort;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
 import com.pi4j.io.gpio.PinState;
 
-import static com.inductiveautomation.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
+import static com.digitalpetri.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
 
 public class DigitalOutputNode extends UaVariableNode {
 
@@ -64,7 +64,7 @@ public class DigitalOutputNode extends UaVariableNode {
         setDataType(Identifiers.Boolean);
         setValue(new DataValue(new Variant(high)));
 
-        EnumSet<AccessLevel> accessLevels = AccessLevel.ReadWrite;
+        EnumSet<AccessLevel> accessLevels = AccessLevel.READ_WRITE;
         UByte accessLevel = ubyte(AccessLevel.getMask(accessLevels));
         setAccessLevel(accessLevel);
         setUserAccessLevel(accessLevel);

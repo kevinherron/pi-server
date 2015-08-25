@@ -18,23 +18,41 @@ package com.digitalpetri.opcua.raspberrypi;
 
 import java.io.File;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
+import java.util.Calendar;
+import java.util.EnumSet;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.util.StatusPrinter;
+import com.digitalpetri.opcua.raspberrypi.util.ManifestUtil;
+import com.digitalpetri.opcua.sdk.server.OpcUaServer;
+import com.digitalpetri.opcua.sdk.server.api.config.OpcUaServerConfig;
+import com.digitalpetri.opcua.stack.core.application.DirectoryCertificateManager;
+import com.digitalpetri.opcua.stack.core.security.SecurityPolicy;
+import com.digitalpetri.opcua.stack.core.types.builtin.DateTime;
+import com.digitalpetri.opcua.stack.core.types.builtin.LocalizedText;
+import com.digitalpetri.opcua.stack.core.types.structured.BuildInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.inductiveautomation.opcua.sdk.server.OpcUaServer;
-import com.inductiveautomation.opcua.stack.core.util.NonceUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.google.common.collect.Lists.newArrayList;
 
 public class PiServer {
 
     public static void main(String[] args) throws Exception {
         new PiServer();
     }
+
+    private static final String PRODUCT_URI = "https://github.com/kevinherron/pi-server";
+    private static final String BUILD_DATE_PROPERTY = "X-PiServer-Build-Date";
+    private static final String BUILD_NUMBER_PROPERTY = "X-PiServer-Build-Number";
+    private static final String SOFTWARE_VERSION_PROPERTY = "X-PiServer-Version";
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -46,16 +64,24 @@ public class PiServer {
 
         gpioConfig = readGpioConfig();
 
-        // SecureRandom on RPi sporadically blocks for insane amounts of time so don't use it for nonce generation.
-        NonceUtil.disableSecureRandom();
+        OpcUaServerConfig serverConfig = OpcUaServerConfig.builder()
+                .setApplicationName(getApplicationName())
+                .setApplicationUri(getApplicationUri())
+                .setBindAddresses(newArrayList("0.0.0.0"))
+                .setBindPort(12685)
+                .setBuildInfo(getBuildInfo())
+                .setCertificateManager(new DirectoryCertificateManager(new File("../security")))
+                .setHostname(getDefaultHostname())
+                .setProductUri(getProductUri())
+                .setSecurityPolicies(EnumSet.allOf(SecurityPolicy.class))
+                .setServerName(getServerName())
+                .build();
 
-        server = new OpcUaServer(new PiServerConfig());
-
-        String namespaceUri = server.getApplicationDescription().getApplicationUri();
+        server = new OpcUaServer(serverConfig);
 
         server.getNamespaceManager().registerAndAdd(
-                namespaceUri,
-                (namespaceIndex) -> new PiNamespace(this, namespaceUri, namespaceIndex));
+                PiNamespace.NAMESPACE_URI,
+                (namespaceIndex) -> new PiNamespace(this, namespaceIndex));
 
         server.startup();
 
@@ -118,6 +144,57 @@ public class PiServer {
                     configJson.getAbsolutePath(), e);
 
             return new GpioConfig();
+        }
+    }
+
+    private LocalizedText getApplicationName() {
+        return LocalizedText.english("Raspberry Pi OPC-UA Server");
+    }
+
+    private String getApplicationUri() {
+        return String.format("urn:%s:pi-server:%s", getDefaultHostname(), UUID.randomUUID());
+    }
+
+    private String getProductUri() {
+        return PRODUCT_URI;
+    }
+
+    private String getServerName() {
+        return "pi-server";
+    }
+
+    private EnumSet<SecurityPolicy> getSecurityPolicies() {
+        return EnumSet.of(SecurityPolicy.None);
+    }
+
+    private BuildInfo getBuildInfo() {
+        String productUri = PRODUCT_URI;
+        String manufacturerName = "digitalpetri";
+        String productName = "Raspberry Pi OPC-UA Server";
+        String softwareVersion = ManifestUtil.read(SOFTWARE_VERSION_PROPERTY).orElse("dev");
+        String buildNumber = ManifestUtil.read(BUILD_NUMBER_PROPERTY).orElse("dev");
+        DateTime buildDate = ManifestUtil.read(BUILD_DATE_PROPERTY).map((ts) -> {
+            Calendar c = Calendar.getInstance();
+            c.setTimeInMillis(Long.valueOf(ts));
+            return new DateTime(c.getTime());
+        }).orElse(new DateTime());
+
+        return new BuildInfo(
+                productUri,
+                manufacturerName,
+                productName,
+                softwareVersion,
+                buildNumber,
+                buildDate
+        );
+    }
+
+    private static String getDefaultHostname() {
+        try {
+            return System.getProperty("hostname",
+                    InetAddress.getLocalHost().getHostName());
+        } catch (UnknownHostException e) {
+            return "localhost";
         }
     }
 

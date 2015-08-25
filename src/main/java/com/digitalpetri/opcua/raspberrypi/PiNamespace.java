@@ -27,38 +27,40 @@ import com.digitalpetri.opcua.raspberrypi.nodes.AnalogInputNode;
 import com.digitalpetri.opcua.raspberrypi.nodes.AnalogOutputNode;
 import com.digitalpetri.opcua.raspberrypi.nodes.DigitalInputNode;
 import com.digitalpetri.opcua.raspberrypi.nodes.DigitalOutputNode;
-import com.google.common.collect.Lists;
+import com.digitalpetri.opcua.sdk.core.Reference;
+import com.digitalpetri.opcua.sdk.server.NamespaceManager;
+import com.digitalpetri.opcua.sdk.server.api.DataItem;
+import com.digitalpetri.opcua.sdk.server.api.MonitoredItem;
+import com.digitalpetri.opcua.sdk.server.api.UaNamespace;
+import com.digitalpetri.opcua.sdk.server.model.UaNode;
+import com.digitalpetri.opcua.sdk.server.model.UaObjectNode;
+import com.digitalpetri.opcua.sdk.server.model.UaVariableNode;
+import com.digitalpetri.opcua.sdk.server.util.SubscriptionModel;
+import com.digitalpetri.opcua.stack.core.Identifiers;
+import com.digitalpetri.opcua.stack.core.StatusCodes;
+import com.digitalpetri.opcua.stack.core.UaException;
+import com.digitalpetri.opcua.stack.core.types.builtin.DataValue;
+import com.digitalpetri.opcua.stack.core.types.builtin.ExpandedNodeId;
+import com.digitalpetri.opcua.stack.core.types.builtin.LocalizedText;
+import com.digitalpetri.opcua.stack.core.types.builtin.NodeId;
+import com.digitalpetri.opcua.stack.core.types.builtin.QualifiedName;
+import com.digitalpetri.opcua.stack.core.types.builtin.StatusCode;
+import com.digitalpetri.opcua.stack.core.types.builtin.unsigned.UInteger;
+import com.digitalpetri.opcua.stack.core.types.builtin.unsigned.UShort;
+import com.digitalpetri.opcua.stack.core.types.enumerated.TimestampsToReturn;
+import com.digitalpetri.opcua.stack.core.types.structured.ReadValueId;
+import com.digitalpetri.opcua.stack.core.types.structured.WriteValue;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import com.inductiveautomation.opcua.sdk.core.Reference;
-import com.inductiveautomation.opcua.sdk.server.NamespaceManager;
-import com.inductiveautomation.opcua.sdk.server.api.DataItem;
-import com.inductiveautomation.opcua.sdk.server.api.MonitoredItem;
-import com.inductiveautomation.opcua.sdk.server.api.UaNamespace;
-import com.inductiveautomation.opcua.sdk.server.model.AttributeObserver;
-import com.inductiveautomation.opcua.sdk.server.model.UaNode;
-import com.inductiveautomation.opcua.sdk.server.model.UaObjectNode;
-import com.inductiveautomation.opcua.sdk.server.model.UaVariableNode;
-import com.inductiveautomation.opcua.sdk.server.util.SubscriptionModel;
-import com.inductiveautomation.opcua.stack.core.Identifiers;
-import com.inductiveautomation.opcua.stack.core.StatusCodes;
-import com.inductiveautomation.opcua.stack.core.UaException;
-import com.inductiveautomation.opcua.stack.core.types.builtin.DataValue;
-import com.inductiveautomation.opcua.stack.core.types.builtin.ExpandedNodeId;
-import com.inductiveautomation.opcua.stack.core.types.builtin.LocalizedText;
-import com.inductiveautomation.opcua.stack.core.types.builtin.NodeId;
-import com.inductiveautomation.opcua.stack.core.types.builtin.QualifiedName;
-import com.inductiveautomation.opcua.stack.core.types.builtin.StatusCode;
-import com.inductiveautomation.opcua.stack.core.types.builtin.unsigned.UInteger;
-import com.inductiveautomation.opcua.stack.core.types.builtin.unsigned.UShort;
-import com.inductiveautomation.opcua.stack.core.types.enumerated.TimestampsToReturn;
-import com.inductiveautomation.opcua.stack.core.types.structured.ReadValueId;
-import com.inductiveautomation.opcua.stack.core.types.structured.WriteValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.inductiveautomation.opcua.sdk.server.util.StreamUtil.opt2stream;
+import static com.digitalpetri.opcua.sdk.server.util.StreamUtil.opt2stream;
+import static com.google.common.collect.Lists.newArrayListWithCapacity;
 
 public class PiNamespace implements UaNamespace {
+
+    public static final String NAMESPACE_URI = "urn:digitalpetri:pi-server:pi-namespace";
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -69,12 +71,10 @@ public class PiNamespace implements UaNamespace {
     private final SubscriptionModel subscriptionModel;
 
     private final PiServer server;
-    private final String namespaceUri;
     private final UShort namespaceIndex;
 
-    public PiNamespace(PiServer server, String namespaceUri, UShort namespaceIndex) {
+    public PiNamespace(PiServer server, UShort namespaceIndex) {
         this.server = server;
-        this.namespaceUri = namespaceUri;
         this.namespaceIndex = namespaceIndex;
 
         gpioFolder = UaObjectNode.builder(this)
@@ -96,7 +96,7 @@ public class PiNamespace implements UaNamespace {
 
         addGpioNodes();
 
-        subscriptionModel = new SubscriptionModel(this, server.getServer().getExecutorService());
+        subscriptionModel = new SubscriptionModel(server.getServer(), this);
     }
 
     private void addGpioNodes() {
@@ -172,34 +172,67 @@ public class PiNamespace implements UaNamespace {
 
     @Override
     public String getNamespaceUri() {
-        return namespaceUri;
+        return NAMESPACE_URI;
     }
 
     @Override
-    public boolean containsNodeId(NodeId nodeId) {
-        return nodes.containsKey(nodeId);
+    public CompletableFuture<List<Reference>> getReferences(NodeId nodeId) {
+        List<Reference> references = getNode(nodeId)
+                .map(UaNode::getReferences)
+                .orElse(ImmutableList.<Reference>of());
+
+        return CompletableFuture.completedFuture(references);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> T getAttribute(NodeId nodeId, int attributeId) {
-        return getNode(nodeId).map(node -> {
-            try {
-                return (T) node.readAttribute(attributeId).getValue().getValue();
-            } catch (Throwable t) {
-                return null;
-            }
-        }).orElse(null);
+    public void read(ReadContext context,
+                     Double maxAge,
+                     TimestampsToReturn timestamps,
+                     List<ReadValueId> readValueIds) {
+
+        List<DataValue> results = newArrayListWithCapacity(readValueIds.size());
+
+        for (ReadValueId readValueId : readValueIds) {
+            NodeId nodeId = readValueId.getNodeId();
+            UInteger attributeId = readValueId.getAttributeId();
+            String indexRange = readValueId.getIndexRange();
+
+            DataValue value = getNode(nodeId)
+                    .map(n -> n.readAttribute(attributeId.intValue(), timestamps, indexRange))
+                    .orElse(new DataValue(new StatusCode(StatusCodes.Bad_NodeIdUnknown)));
+
+            results.add(value);
+        }
+
+        context.complete(results);
     }
 
     @Override
-    public boolean attributeExists(NodeId nodeId, int attributeId) {
-        return getNode(nodeId).map(node -> node.hasAttribute(attributeId)).orElse(false);
-    }
+    public void write(WriteContext context, List<WriteValue> writeValues) {
+        NamespaceManager namespaceManager = server.getServer().getNamespaceManager();
 
-    @Override
-    public Optional<List<Reference>> getReferences(NodeId nodeId) {
-        return getNode(nodeId).map(UaNode::getReferences);
+        List<StatusCode> results = newArrayListWithCapacity(writeValues.size());
+
+        for (WriteValue writeValue : writeValues) {
+            NodeId nodeId = writeValue.getNodeId();
+            UInteger attributeId = writeValue.getAttributeId();
+            DataValue value = writeValue.getValue();
+            String indexRange = writeValue.getIndexRange();
+
+            StatusCode result = getNode(nodeId).map(n -> {
+                try {
+                    n.writeAttribute(namespaceManager, attributeId, value, indexRange);
+
+                    return StatusCode.GOOD;
+                } catch (UaException e) {
+                    return e.getStatusCode();
+                }
+            }).orElse(new StatusCode(StatusCodes.Bad_NodeIdUnknown));
+
+            results.add(result);
+        }
+
+        context.complete(results);
     }
 
     @Override
@@ -221,59 +254,6 @@ public class PiNamespace implements UaNamespace {
     public Optional<UaNode> removeNode(NodeId nodeId) {
         return Optional.ofNullable(nodes.remove(nodeId));
     }
-
-    @Override
-    public void read(List<ReadValueId> readValueIds,
-                     Double maxAge,
-                     TimestampsToReturn timestamps,
-                     CompletableFuture<List<DataValue>> future) {
-
-        List<DataValue> results = Lists.newArrayListWithCapacity(readValueIds.size());
-
-        for (ReadValueId readValueId : readValueIds) {
-            NodeId nodeId = readValueId.getNodeId();
-            UInteger attributeId = readValueId.getAttributeId();
-            String indexRange = readValueId.getIndexRange();
-
-            DataValue value = getNode(nodeId)
-                    .map(n -> n.readAttribute(attributeId.intValue(), timestamps, indexRange))
-                    .orElse(new DataValue(new StatusCode(StatusCodes.Bad_NodeIdUnknown)));
-
-            results.add(value);
-        }
-
-        future.complete(results);
-    }
-
-    @Override
-    public void write(List<WriteValue> writeValues, CompletableFuture<List<StatusCode>> future) {
-        NamespaceManager namespaceManager = server.getServer().getNamespaceManager();
-
-        List<StatusCode> results = Lists.newArrayListWithCapacity(writeValues.size());
-
-        for (WriteValue writeValue : writeValues) {
-            NodeId nodeId = writeValue.getNodeId();
-            UInteger attributeId = writeValue.getAttributeId();
-            DataValue value = writeValue.getValue();
-            String indexRange = writeValue.getIndexRange();
-
-            StatusCode result = getNode(nodeId).map(n -> {
-                try {
-                    n.writeAttribute(namespaceManager, attributeId, value, indexRange);
-
-                    return StatusCode.Good;
-                } catch (UaException e) {
-                    return e.getStatusCode();
-                }
-            }).orElse(new StatusCode(StatusCodes.Bad_NodeIdUnknown));
-
-            results.add(result);
-        }
-
-        future.complete(results);
-    }
-
-    private final Map<UInteger, AttributeObserver> observers = Maps.newConcurrentMap();
 
     @Override
     public void onDataItemsCreated(List<DataItem> dataItems) {
