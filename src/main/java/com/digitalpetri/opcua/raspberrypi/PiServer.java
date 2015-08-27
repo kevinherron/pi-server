@@ -75,6 +75,7 @@ public class PiServer {
                 .setProductUri(getProductUri())
                 .setSecurityPolicies(EnumSet.allOf(SecurityPolicy.class))
                 .setServerName(getServerName())
+                .setUserTokenPolicies(newArrayList(OpcUaServerConfig.USER_TOKEN_POLICY_ANONYMOUS))
                 .build();
 
         server = new OpcUaServer(serverConfig);
@@ -160,7 +161,7 @@ public class PiServer {
     }
 
     private String getServerName() {
-        return "pi-server";
+        return "";
     }
 
     private EnumSet<SecurityPolicy> getSecurityPolicies() {
