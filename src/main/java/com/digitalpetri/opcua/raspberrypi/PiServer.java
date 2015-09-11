@@ -32,7 +32,10 @@ import ch.qos.logback.core.util.StatusPrinter;
 import com.digitalpetri.opcua.raspberrypi.util.ManifestUtil;
 import com.digitalpetri.opcua.sdk.server.OpcUaServer;
 import com.digitalpetri.opcua.sdk.server.api.config.OpcUaServerConfig;
-import com.digitalpetri.opcua.stack.core.application.DirectoryCertificateManager;
+import com.digitalpetri.opcua.stack.core.application.CertificateManager;
+import com.digitalpetri.opcua.stack.core.application.CertificateValidator;
+import com.digitalpetri.opcua.stack.core.application.DefaultCertificateManager;
+import com.digitalpetri.opcua.stack.core.application.DefaultCertificateValidator;
 import com.digitalpetri.opcua.stack.core.security.SecurityPolicy;
 import com.digitalpetri.opcua.stack.core.types.builtin.DateTime;
 import com.digitalpetri.opcua.stack.core.types.builtin.LocalizedText;
@@ -64,13 +67,17 @@ public class PiServer {
 
         gpioConfig = readGpioConfig();
 
+        CertificateManager certificateManager = new DefaultCertificateManager();
+        CertificateValidator certificateValidator = new DefaultCertificateValidator(new File("../security"));
+
         OpcUaServerConfig serverConfig = OpcUaServerConfig.builder()
                 .setApplicationName(getApplicationName())
                 .setApplicationUri(getApplicationUri())
                 .setBindAddresses(newArrayList("0.0.0.0"))
                 .setBindPort(12685)
                 .setBuildInfo(getBuildInfo())
-                .setCertificateManager(new DirectoryCertificateManager(new File("../security")))
+                .setCertificateManager(certificateManager)
+                .setCertificateValidator(certificateValidator)
                 .setHostname(getDefaultHostname())
                 .setProductUri(getProductUri())
                 .setSecurityPolicies(EnumSet.allOf(SecurityPolicy.class))
