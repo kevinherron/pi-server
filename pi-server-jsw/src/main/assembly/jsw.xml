@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+
+    <id>jsw</id>
+
+    <formats>
+        <format>zip</format>
+    </formats>
+
+    <fileSets>
+        <fileSet>
+            <directory>${basedir}/src/thirdparty/jsw/lib</directory>
+            <outputDirectory>pi-server/lib</outputDirectory>
+            <includes>
+                <include>*.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${basedir}/src/thirdparty/jsw/bin</directory>
+            <outputDirectory>pi-server/</outputDirectory>
+            <includes>
+                <include>*</include>
+            </includes>
+        </fileSet>
+
+        <!-- Intentionally empty logs directory -->
+        <fileSet>
+            <directory>src/main/assembly</directory>
+            <outputDirectory>pi-server-data/logs</outputDirectory>
+            <excludes>
+                <exclude>*</exclude>
+            </excludes>
+        </fileSet>
+
+        <!-- Intentionally empty config/sensors directory -->
+        <fileSet>
+            <directory>src/main/assembly</directory>
+            <outputDirectory>pi-server-data/config/sensors</outputDirectory>
+            <excludes>
+                <exclude>*</exclude>
+            </excludes>
+        </fileSet>
+
+        <!-- Intentionally empty certificates directory -->
+        <fileSet>
+            <directory>src/main/assembly</directory>
+            <outputDirectory>pi-server-data/certificates</outputDirectory>
+            <excludes>
+                <exclude>*</exclude>
+            </excludes>
+        </fileSet>
+    </fileSets>
+
+    <files>
+        <file>
+            <source>${basedir}/src/thirdparty/jsw/config/jsw.conf</source>
+            <outputDirectory>pi-server-data/config</outputDirectory>
+        </file>
+        <file>
+            <source>${basedir}/src/main/resources/pi-server.conf</source>
+            <outputDirectory>pi-server-data/config</outputDirectory>
+        </file>
+        <file>
+            <source>${basedir}/src/main/resources/logback.xml</source>
+            <outputDirectory>pi-server-data/config</outputDirectory>
+        </file>
+    </files>
+
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>pi-server/lib</outputDirectory>
+        </dependencySet>
+    </dependencySets>
+
+</assembly>
