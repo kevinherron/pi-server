@@ -12,6 +12,8 @@
     <modules>
         <module>pi-server</module>
         <module>pi-server-jsw</module>
+        <module>sensor-plugin</module>
+        <module>sensor-plugin-grovepi</module>
     </modules>
 
     <name>PiServer</name>
