@@ -28,6 +28,7 @@ GPIO configuration is in `config/gpio-config.json`. Use `config/gpio-config.json
 - Model B r2 Pins: http://pi4j.com/pins/model-b-rev2.html
 - Model B+ Pins: http://pi4j.com/pins/model-b-plus.html
 - Model 2B Pins: http://pi4j.com/pins/model-2b-rev1.html
+- Model 3B Pins: http://pi4j.com/pins/model-3b-rev1.html
 
 Running PiServer
 ---------
