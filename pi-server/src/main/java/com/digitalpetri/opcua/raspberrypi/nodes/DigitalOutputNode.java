@@ -26,7 +26,7 @@ import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
 import com.pi4j.io.gpio.PinState;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
-import org.eclipse.milo.opcua.sdk.server.api.ServerNodeMap;
+import org.eclipse.milo.opcua.sdk.server.nodes.ServerContext;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -45,13 +45,13 @@ public class DigitalOutputNode extends UaVariableNode {
 
     private final GpioPinDigitalOutput output;
 
-    public DigitalOutputNode(ServerNodeMap nodeMap,
+    public DigitalOutputNode(ServerContext context,
                              NodeId nodeId,
                              QualifiedName browseName,
                              LocalizedText displayName,
                              OutputConfig outputConfig) {
 
-        super(nodeMap, nodeId, browseName, displayName);
+        super(context, nodeId, browseName, displayName);
 
         boolean high = outputConfig.getValue() > 0;
 
@@ -88,7 +88,7 @@ public class DigitalOutputNode extends UaVariableNode {
         UShort namespaceIndex = namespace.getNamespaceIndex();
 
         return new DigitalOutputNode(
-            namespace.getNodeMap(),
+            namespace.getServerContext(),
             new NodeId(namespaceIndex, "Pin" + outputConfig.getPin()),
             new QualifiedName(namespaceIndex, outputConfig.getName()),
             LocalizedText.english(outputConfig.getName()),

@@ -25,7 +25,7 @@ import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinAnalogOutput;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
-import org.eclipse.milo.opcua.sdk.server.api.ServerNodeMap;
+import org.eclipse.milo.opcua.sdk.server.nodes.ServerContext;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -44,13 +44,13 @@ public class AnalogOutputNode extends UaVariableNode {
 
     private final GpioPinAnalogOutput output;
 
-    public AnalogOutputNode(ServerNodeMap nodeMap,
+    public AnalogOutputNode(ServerContext context,
                             NodeId nodeId,
                             QualifiedName browseName,
                             LocalizedText displayName,
                             OutputConfig outputConfig) {
 
-        super(nodeMap, nodeId, browseName, displayName);
+        super(context, nodeId, browseName, displayName);
 
         output = controller.provisionAnalogOutputPin(
             GpioConfig.int2pin(outputConfig.getPin()),
@@ -85,7 +85,7 @@ public class AnalogOutputNode extends UaVariableNode {
         UShort namespaceIndex = namespace.getNamespaceIndex();
 
         return new AnalogOutputNode(
-            namespace.getNodeMap(),
+            namespace.getServerContext(),
             new NodeId(namespaceIndex, "Pin" + outputConfig.getPin()),
             new QualifiedName(namespaceIndex, outputConfig.getName()),
             LocalizedText.english(outputConfig.getName()),

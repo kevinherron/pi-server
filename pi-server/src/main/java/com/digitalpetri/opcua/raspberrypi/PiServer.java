@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.util.Calendar;
 import java.util.EnumSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.UUID;
@@ -34,19 +35,23 @@ import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.util.StatusPrinter;
 import com.digitalpetri.opcua.raspberrypi.plugins.PluginContext;
 import com.digitalpetri.opcua.raspberrypi.plugins.PluginHook;
+import com.digitalpetri.opcua.raspberrypi.util.KeyStoreLoader;
 import com.digitalpetri.opcua.raspberrypi.util.ManifestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.api.config.OpcUaServerConfig;
+import org.eclipse.milo.opcua.sdk.server.util.HostnameUtil;
 import org.eclipse.milo.opcua.stack.core.application.CertificateManager;
 import org.eclipse.milo.opcua.stack.core.application.CertificateValidator;
 import org.eclipse.milo.opcua.stack.core.application.DefaultCertificateManager;
 import org.eclipse.milo.opcua.stack.core.application.DefaultCertificateValidator;
+import org.eclipse.milo.opcua.stack.core.application.DirectoryCertificateValidator;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.structured.BuildInfo;
+import org.eclipse.milo.opcua.stack.core.util.CertificateUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,19 +82,49 @@ public class PiServer {
 
         gpioConfig = readGpioConfig();
 
-        CertificateManager certificateManager = new DefaultCertificateManager();
-        CertificateValidator certificateValidator = new DefaultCertificateValidator(
-            new File("../pi-server-data/certificates"));
+        File securityTempDir = new File(System.getProperty("java.io.tmpdir"), "security");
+        if (!securityTempDir.exists() && !securityTempDir.mkdirs()) {
+            throw new Exception("unable to create security temp dir: " + securityTempDir);
+        }
+        LoggerFactory.getLogger(getClass()).info("security temp dir: {}", securityTempDir.getAbsolutePath());
+
+        KeyStoreLoader loader = new KeyStoreLoader().load(securityTempDir);
+
+        DefaultCertificateManager certificateManager = new DefaultCertificateManager(
+            loader.getServerKeyPair(),
+            loader.getServerCertificateChain()
+        );
+
+        File pkiDir = securityTempDir.toPath().resolve("pki").toFile();
+        DirectoryCertificateValidator certificateValidator = new DirectoryCertificateValidator(pkiDir);
+        LoggerFactory.getLogger(getClass()).info("pki dir: {}", pkiDir.getAbsolutePath());
+
+        // The configured application URI must match the one in the certificate(s)
+        String applicationUri = certificateManager.getCertificates().stream()
+            .findFirst()
+            .map(certificate ->
+                CertificateUtil.getSubjectAltNameField(certificate, CertificateUtil.SUBJECT_ALT_NAME_URI)
+                    .map(Object::toString)
+                    .orElseThrow(() -> new RuntimeException("certificate is missing the application URI")))
+            .orElse("urn:eclipse:milo:examples:server:" + UUID.randomUUID());
+
+        List<String> bindAddresses = newArrayList();
+        bindAddresses.add("0.0.0.0");
+
+        List<String> endpointAddresses = newArrayList();
+        endpointAddresses.add(HostnameUtil.getHostname());
+        endpointAddresses.addAll(HostnameUtil.getHostnames("0.0.0.0"));
 
         OpcUaServerConfig serverConfig = OpcUaServerConfig.builder()
             .setApplicationName(getApplicationName())
-            .setApplicationUri(getApplicationUri())
+            .setApplicationUri(applicationUri)
             .setBindAddresses(newArrayList("0.0.0.0"))
             .setBindPort(12685)
+            .setBindAddresses(bindAddresses)
+            .setEndpointAddresses(endpointAddresses)
             .setBuildInfo(getBuildInfo())
             .setCertificateManager(certificateManager)
             .setCertificateValidator(certificateValidator)
-            .setHostname(getDefaultHostname())
             .setProductUri(getProductUri())
             .setSecurityPolicies(getSecurityPolicies())
             .setServerName(getServerName())

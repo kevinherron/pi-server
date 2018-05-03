@@ -7,7 +7,7 @@ import com.digitalpetri.grovepi.GroveAnalogPin;
 import com.digitalpetri.opcua.raspberrypi.api.SensorContext;
 import com.digitalpetri.opcua.raspberrypi.grovepi.GrovePiContext;
 import com.digitalpetri.opcua.raspberrypi.grovepi.GrovePiSensor;
-import org.eclipse.milo.opcua.sdk.server.api.ServerNodeMap;
+import org.eclipse.milo.opcua.sdk.server.api.AddressSpace;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -27,14 +27,13 @@ public class RotaryAngleSensor extends GrovePiSensor {
     private final UaVariableNode voltageNode;
     private final UaVariableNode degreesNode;
 
-    private final ServerNodeMap nodeMap;
     private final long updateRate;
     private final com.digitalpetri.grovepi.sensors.RotaryAngleSensor sensor;
 
     public RotaryAngleSensor(GrovePiContext grovePiContext, SensorContext sensorContext) {
         super(grovePiContext, sensorContext);
 
-        nodeMap = sensorContext.getServer().getNodeMap();
+        AddressSpace addressSpace = sensorContext.getServer().getAddressSpace();
 
         updateRate = sensorContext.getConfig().getDuration(
             "sensor.grove.update-rate", TimeUnit.MILLISECONDS);
@@ -46,34 +45,34 @@ public class RotaryAngleSensor extends GrovePiSensor {
             GroveAnalogPin.values()[pinNumber]
         );
 
-        sensorValueNode = new UaVariableNode.UaVariableNodeBuilder(nodeMap)
+        sensorValueNode = new UaVariableNode.UaVariableNodeBuilder(sensorContext.getServer())
             .setNodeId(sensorContext.nodeId("Sensor Value"))
             .setBrowseName(new QualifiedName(sensorContext.getNamespaceIndex(), "Sensor Value"))
             .setDisplayName(LocalizedText.english("Sensor Value"))
             .setDataType(Identifiers.Double)
             .build();
 
-        nodeMap.addNode(sensorValueNode);
+        addressSpace.addNode(sensorValueNode);
         getSensorNode().addComponent(sensorValueNode);
 
-        voltageNode = new UaVariableNode.UaVariableNodeBuilder(nodeMap)
+        voltageNode = new UaVariableNode.UaVariableNodeBuilder(sensorContext.getServer())
             .setNodeId(sensorContext.nodeId("Voltage"))
             .setBrowseName(new QualifiedName(sensorContext.getNamespaceIndex(), "Voltage"))
             .setDisplayName(LocalizedText.english("Voltage"))
             .setDataType(Identifiers.Double)
             .build();
 
-        nodeMap.addNode(voltageNode);
+        addressSpace.addNode(voltageNode);
         getSensorNode().addComponent(voltageNode);
 
-        degreesNode = new UaVariableNode.UaVariableNodeBuilder(nodeMap)
+        degreesNode = new UaVariableNode.UaVariableNodeBuilder(sensorContext.getServer())
             .setNodeId(sensorContext.nodeId("Degrees"))
             .setBrowseName(new QualifiedName(sensorContext.getNamespaceIndex(), "Degrees"))
             .setDisplayName(LocalizedText.english("Degrees"))
             .setDataType(Identifiers.Double)
             .build();
 
-        nodeMap.addNode(degreesNode);
+        addressSpace.addNode(degreesNode);
         getSensorNode().addComponent(degreesNode);
 
         readSensor();

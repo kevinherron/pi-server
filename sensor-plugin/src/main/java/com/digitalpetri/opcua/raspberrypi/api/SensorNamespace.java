@@ -12,10 +12,10 @@ import com.google.common.collect.Maps;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.api.AccessContext;
+import org.eclipse.milo.opcua.sdk.server.api.AddressSpace;
 import org.eclipse.milo.opcua.sdk.server.api.DataItem;
 import org.eclipse.milo.opcua.sdk.server.api.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.api.Namespace;
-import org.eclipse.milo.opcua.sdk.server.api.ServerNodeMap;
 import org.eclipse.milo.opcua.sdk.server.nodes.AttributeContext;
 import org.eclipse.milo.opcua.sdk.server.nodes.ServerNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaNode;
@@ -52,7 +52,7 @@ public class SensorNamespace implements Namespace {
 
     private final Map<String, Sensor> sensors = Maps.newConcurrentMap();
 
-    private final ServerNodeMap nodeMap;
+    private final AddressSpace addressSpace;
     private final SubscriptionModel subscriptionModel;
     private final NodeId sensorsNodeId;
 
@@ -63,22 +63,22 @@ public class SensorNamespace implements Namespace {
         this.server = server;
         this.namespaceIndex = namespaceIndex;
 
-        nodeMap = server.getNodeMap();
+        addressSpace = server.getAddressSpace();
 
         subscriptionModel = new SubscriptionModel(server, this);
 
         sensorsNodeId = new NodeId(namespaceIndex, "Sensors");
 
-        UaNode folderNode = UaObjectNode.builder(nodeMap)
+        UaNode folderNode = UaObjectNode.builder(server)
             .setNodeId(sensorsNodeId)
             .setBrowseName(new QualifiedName(namespaceIndex, "Sensors"))
             .setDisplayName(LocalizedText.english("Sensors"))
             .setTypeDefinition(Identifiers.FolderType)
             .build();
 
-        nodeMap.put(folderNode.getNodeId(), folderNode);
+        addressSpace.put(folderNode.getNodeId(), folderNode);
 
-        server.getUaNamespace().getObjectsFolder().addReference(
+        addressSpace.addReference(
             new Reference(
                 Identifiers.ObjectsFolder,
                 Identifiers.Organizes,
@@ -94,16 +94,16 @@ public class SensorNamespace implements Namespace {
         List<String> browsePath = context.getConfig().getStringList("sensor.browse-path");
         List<UaNode> browsePathNodes = createNodes(browsePath, Lists.newArrayList(), Lists.newArrayList());
 
-        browsePathNodes.stream().forEach(node -> nodeMap.putIfAbsent(node.getNodeId(), node));
+        browsePathNodes.stream().forEach(node -> addressSpace.putIfAbsent(node.getNodeId(), node));
 
         // Create references for all the nodes we built...
-        ServerNode sensorsFolder = nodeMap.get(sensorsNodeId);
+        ServerNode sensorsFolder = addressSpace.get(sensorsNodeId);
         List<ServerNode> ns = Lists.newArrayList(sensorsFolder);
         ns.addAll(browsePathNodes);
         List<Reference> references = createReferences(context, ns, Lists.newArrayList());
 
         references.stream().forEach(reference -> {
-            ServerNode node = nodeMap.get(reference.getSourceNodeId());
+            ServerNode node = addressSpace.get(reference.getSourceNodeId());
             node.addReference(reference);
         });
 
@@ -123,7 +123,7 @@ public class SensorNamespace implements Namespace {
 
     @Override
     public CompletableFuture<List<Reference>> browse(AccessContext context, NodeId nodeId) {
-        ServerNode node = nodeMap.get(nodeId);
+        ServerNode node = addressSpace.get(nodeId);
 
         if (node != null) {
             return CompletableFuture.completedFuture(node.getReferences());
@@ -171,9 +171,9 @@ public class SensorNamespace implements Namespace {
             }
         });
 
-		/*
+        /*
          * When all PendingReads have been completed complete the future we received with the values.
-		 */
+         */
 
         List<CompletableFuture<DataValue>> futures = pendingReads.stream()
             .map(PendingRead::getFuture)
@@ -295,7 +295,7 @@ public class SensorNamespace implements Namespace {
     private List<DataValue> read(AttributeContext context, List<ReadValueId> readValueIds) {
         return readValueIds.stream().map(id -> {
             NodeId nodeId = id.getNodeId();
-            ServerNode node = nodeMap.get(nodeId);
+            ServerNode node = addressSpace.get(nodeId);
 
             if (node != null) {
                 return node.readAttribute(context, id.getAttributeId());
@@ -326,7 +326,7 @@ public class SensorNamespace implements Namespace {
             String element = browsePath.get(0);
             String nodeId = String.join("/", currentPath) + "/" + element;
 
-            UaNode node = UaObjectNode.builder(nodeMap)
+            UaNode node = UaObjectNode.builder(server)
                 .setNodeId(new NodeId(getNamespaceIndex(), nodeId))
                 .setBrowseName(new QualifiedName(getNamespaceIndex(), element))
                 .setDisplayName(LocalizedText.english(element))
