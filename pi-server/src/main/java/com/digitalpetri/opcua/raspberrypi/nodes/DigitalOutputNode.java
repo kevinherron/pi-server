@@ -18,15 +18,15 @@ package com.digitalpetri.opcua.raspberrypi.nodes;
 
 import java.util.Set;
 
-import com.digitalpetri.opcua.raspberrypi.GpioConfig;
 import com.digitalpetri.opcua.raspberrypi.GpioConfig.OutputConfig;
 import com.digitalpetri.opcua.raspberrypi.PiNamespace;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
 import com.pi4j.io.gpio.PinState;
+import com.pi4j.io.gpio.RaspiPin;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
-import org.eclipse.milo.opcua.sdk.server.nodes.ServerContext;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaNodeContext;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -45,7 +45,7 @@ public class DigitalOutputNode extends UaVariableNode {
 
     private final GpioPinDigitalOutput output;
 
-    public DigitalOutputNode(ServerContext context,
+    public DigitalOutputNode(UaNodeContext context,
                              NodeId nodeId,
                              QualifiedName browseName,
                              LocalizedText displayName,
@@ -56,7 +56,7 @@ public class DigitalOutputNode extends UaVariableNode {
         boolean high = outputConfig.getValue() > 0;
 
         output = controller.provisionDigitalOutputPin(
-            GpioConfig.int2pin(outputConfig.getPin()),
+            RaspiPin.getPinByAddress(outputConfig.getPin()),
             outputConfig.getName(),
             high ? PinState.HIGH : PinState.LOW
         );
@@ -88,7 +88,7 @@ public class DigitalOutputNode extends UaVariableNode {
         UShort namespaceIndex = namespace.getNamespaceIndex();
 
         return new DigitalOutputNode(
-            namespace.getServerContext(),
+            namespace.getNodeContext(),
             new NodeId(namespaceIndex, "Pin" + outputConfig.getPin()),
             new QualifiedName(namespaceIndex, outputConfig.getName()),
             LocalizedText.english(outputConfig.getName()),

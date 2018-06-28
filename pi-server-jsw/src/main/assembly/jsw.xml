@@ -43,10 +43,10 @@
             </excludes>
         </fileSet>
 
-        <!-- Intentionally empty certificates directory -->
+        <!-- Intentionally empty security directory -->
         <fileSet>
             <directory>src/main/assembly</directory>
-            <outputDirectory>pi-server-data/certificates</outputDirectory>
+            <outputDirectory>pi-server-data/security</outputDirectory>
             <excludes>
                 <exclude>*</exclude>
             </excludes>

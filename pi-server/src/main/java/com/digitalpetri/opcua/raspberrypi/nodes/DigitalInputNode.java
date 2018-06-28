@@ -16,7 +16,6 @@
 
 package com.digitalpetri.opcua.raspberrypi.nodes;
 
-import com.digitalpetri.opcua.raspberrypi.GpioConfig;
 import com.digitalpetri.opcua.raspberrypi.GpioConfig.InputConfig;
 import com.digitalpetri.opcua.raspberrypi.PiNamespace;
 import com.pi4j.io.gpio.GpioController;
@@ -24,9 +23,9 @@ import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalInput;
 import com.pi4j.io.gpio.PinPullResistance;
 import com.pi4j.io.gpio.PinState;
+import com.pi4j.io.gpio.RaspiPin;
 import com.pi4j.io.gpio.event.GpioPinListenerDigital;
-import org.eclipse.milo.opcua.sdk.server.api.ServerNodeMap;
-import org.eclipse.milo.opcua.sdk.server.nodes.ServerContext;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaNodeContext;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -42,7 +41,7 @@ public class DigitalInputNode extends UaVariableNode {
 
     private final GpioPinDigitalInput input;
 
-    public DigitalInputNode(ServerContext context,
+    public DigitalInputNode(UaNodeContext context,
                             NodeId nodeId,
                             QualifiedName browseName,
                             LocalizedText displayName,
@@ -53,7 +52,7 @@ public class DigitalInputNode extends UaVariableNode {
         boolean pullDown = inputConfig.getResistance().equalsIgnoreCase("pull-down");
 
         input = controller.provisionDigitalInputPin(
-            GpioConfig.int2pin(inputConfig.getPin()),
+            RaspiPin.getPinByAddress(inputConfig.getPin()),
             inputConfig.getName(),
             pullDown ? PinPullResistance.PULL_DOWN : PinPullResistance.PULL_UP
         );
@@ -74,7 +73,7 @@ public class DigitalInputNode extends UaVariableNode {
         UShort namespaceIndex = namespace.getNamespaceIndex();
 
         return new DigitalInputNode(
-            namespace.getServerContext(),
+            namespace.getNodeContext(),
             new NodeId(namespaceIndex, "Pin" + inputConfig.getPin()),
             new QualifiedName(namespaceIndex, inputConfig.getName()),
             LocalizedText.english(inputConfig.getName()),

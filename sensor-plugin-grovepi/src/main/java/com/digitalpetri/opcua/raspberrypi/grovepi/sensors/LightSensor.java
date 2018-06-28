@@ -8,7 +8,7 @@ import com.digitalpetri.grovepi.sensors.GroveLightSensor;
 import com.digitalpetri.opcua.raspberrypi.api.SensorContext;
 import com.digitalpetri.opcua.raspberrypi.grovepi.GrovePiContext;
 import com.digitalpetri.opcua.raspberrypi.grovepi.GrovePiSensor;
-import org.eclipse.milo.opcua.sdk.server.api.AddressSpace;
+import org.eclipse.milo.opcua.sdk.server.UaNodeManager;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -32,7 +32,7 @@ public class LightSensor extends GrovePiSensor {
     public LightSensor(GrovePiContext grovePiContext, SensorContext sensorContext) {
         super(grovePiContext, sensorContext);
 
-        AddressSpace addressSpace = sensorContext.getServer().getAddressSpace();
+        UaNodeManager nodeManager = sensorContext.getServer().getNodeManager();
 
         updateRate = sensorContext.getConfig().getDuration(
             "sensor.grove.update-rate", TimeUnit.MILLISECONDS);
@@ -51,7 +51,7 @@ public class LightSensor extends GrovePiSensor {
             .setDataType(Identifiers.Double)
             .build();
 
-        addressSpace.addNode(colorTemperatureNode);
+        nodeManager.addNode(colorTemperatureNode);
         getSensorNode().addComponent(colorTemperatureNode);
 
         readSensor();

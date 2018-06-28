@@ -6,12 +6,12 @@ import java.util.concurrent.CompletableFuture;
 import com.digitalpetri.opcua.raspberrypi.api.Sensor;
 import com.digitalpetri.opcua.raspberrypi.api.SensorContext;
 import org.eclipse.milo.opcua.sdk.core.Reference;
+import org.eclipse.milo.opcua.sdk.server.UaNodeManager;
 import org.eclipse.milo.opcua.sdk.server.api.AccessContext;
-import org.eclipse.milo.opcua.sdk.server.api.AddressSpace;
 import org.eclipse.milo.opcua.sdk.server.api.DataItem;
 import org.eclipse.milo.opcua.sdk.server.api.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.nodes.AttributeContext;
-import org.eclipse.milo.opcua.sdk.server.nodes.ServerNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectNode;
 import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
@@ -33,7 +33,7 @@ import static java.util.stream.Collectors.toList;
 
 public abstract class GrovePiSensor implements Sensor {
 
-    private final AddressSpace addressSpace;
+    private final UaNodeManager nodeManager;
     private final SubscriptionModel subscriptionModel;
     private final UaObjectNode sensorNode;
 
@@ -44,7 +44,7 @@ public abstract class GrovePiSensor implements Sensor {
         this.grovePiContext = grovePiContext;
         this.sensorContext = sensorContext;
 
-        addressSpace = sensorContext.getServer().getAddressSpace();
+        nodeManager = sensorContext.getServer().getNodeManager();
 
         subscriptionModel = new SubscriptionModel(sensorContext.getServer(), this);
 
@@ -55,7 +55,7 @@ public abstract class GrovePiSensor implements Sensor {
             .setTypeDefinition(Identifiers.FolderType)
             .build();
 
-        addressSpace.put(sensorNode.getNodeId(), sensorNode);
+        nodeManager.addNode(sensorNode);
     }
 
     @Override
@@ -70,7 +70,7 @@ public abstract class GrovePiSensor implements Sensor {
 
     @Override
     public CompletableFuture<List<Reference>> browse(AccessContext context, NodeId nodeId) {
-        ServerNode node = addressSpace.get(nodeId);
+        UaNode node = nodeManager.get(nodeId);
 
         if (node != null) {
             return completedFuture(node.getReferences());
@@ -92,7 +92,7 @@ public abstract class GrovePiSensor implements Sensor {
         for (ReadValueId id : readValueIds) {
             DataValue value;
 
-            ServerNode node = addressSpace.get(id.getNodeId());
+            UaNode node = nodeManager.get(id.getNodeId());
 
             if (node != null) {
                 value = node.readAttribute(
@@ -115,7 +115,7 @@ public abstract class GrovePiSensor implements Sensor {
     @Override
     public void write(WriteContext context, List<WriteValue> writeValues) {
         List<StatusCode> results = writeValues.stream().map(value -> {
-            if (addressSpace.containsKey(value.getNodeId())) {
+            if (nodeManager.containsNode(value.getNodeId())) {
                 return new StatusCode(StatusCodes.Bad_NotWritable);
             } else {
                 return new StatusCode(StatusCodes.Bad_NodeIdUnknown);

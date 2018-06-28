@@ -42,10 +42,7 @@ import com.google.common.collect.Sets;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.api.config.OpcUaServerConfig;
 import org.eclipse.milo.opcua.sdk.server.util.HostnameUtil;
-import org.eclipse.milo.opcua.stack.core.application.CertificateManager;
-import org.eclipse.milo.opcua.stack.core.application.CertificateValidator;
 import org.eclipse.milo.opcua.stack.core.application.DefaultCertificateManager;
-import org.eclipse.milo.opcua.stack.core.application.DefaultCertificateValidator;
 import org.eclipse.milo.opcua.stack.core.application.DirectoryCertificateValidator;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -82,20 +79,20 @@ public class PiServer {
 
         gpioConfig = readGpioConfig();
 
-        File securityTempDir = new File(System.getProperty("java.io.tmpdir"), "security");
-        if (!securityTempDir.exists() && !securityTempDir.mkdirs()) {
-            throw new Exception("unable to create security temp dir: " + securityTempDir);
+        File securityDir = new File("../pi-server-data/security");
+        if (!securityDir.exists() && !securityDir.mkdirs()) {
+            throw new Exception("unable to create security dir: " + securityDir);
         }
-        LoggerFactory.getLogger(getClass()).info("security temp dir: {}", securityTempDir.getAbsolutePath());
+        logger.info("security dir: {}", securityDir.getAbsolutePath());
 
-        KeyStoreLoader loader = new KeyStoreLoader().load(securityTempDir);
+        KeyStoreLoader loader = new KeyStoreLoader().load(securityDir);
 
         DefaultCertificateManager certificateManager = new DefaultCertificateManager(
             loader.getServerKeyPair(),
             loader.getServerCertificateChain()
         );
 
-        File pkiDir = securityTempDir.toPath().resolve("pki").toFile();
+        File pkiDir = securityDir.toPath().resolve("pki").toFile();
         DirectoryCertificateValidator certificateValidator = new DirectoryCertificateValidator(pkiDir);
         LoggerFactory.getLogger(getClass()).info("pki dir: {}", pkiDir.getAbsolutePath());
 
@@ -129,7 +126,6 @@ public class PiServer {
             .setSecurityPolicies(getSecurityPolicies())
             .setServerName(getServerName())
             .setUserTokenPolicies(newArrayList(OpcUaServerConfig.USER_TOKEN_POLICY_ANONYMOUS))
-            .setStrictEndpointUrlsEnabled(false)
             .build();
 
         server = new OpcUaServer(serverConfig);

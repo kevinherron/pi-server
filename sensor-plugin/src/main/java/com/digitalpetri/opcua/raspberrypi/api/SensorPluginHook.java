@@ -57,21 +57,26 @@ public class SensorPluginHook implements PluginHook {
          * Load any .conf files in this directory.
 		 */
         File[] configFiles = directory.listFiles(pathname -> pathname.getPath().endsWith(".conf"));
-        Arrays.stream(configFiles).forEach(file -> {
-            try {
-                Tuple2<Sensor, SensorContext> tuple = load(file, namespace);
 
-                namespace.addPlugin(tuple.v1(), tuple.v2());
-            } catch (Exception e) {
-                logger.error("Error loading connection.", e);
-            }
-        });
+        if (configFiles != null) {
+            Arrays.stream(configFiles).forEach(file -> {
+                try {
+                    Tuple2<Sensor, SensorContext> tuple = load(file, namespace);
+
+                    namespace.addPlugin(tuple.v1(), tuple.v2());
+                } catch (Exception e) {
+                    logger.error("Error loading connection.", e);
+                }
+            });
+        }
 
 		/*
          * Recursively descend into subdirectories loading .conf files as we go.
 		 */
         File[] dirs = directory.listFiles(File::isDirectory);
-        Arrays.stream(dirs).forEach(d -> loadSensorDirectory(d, namespace));
+        if (dirs != null) {
+            Arrays.stream(dirs).forEach(d -> loadSensorDirectory(d, namespace));
+        }
     }
 
     private Tuple2<Sensor, SensorContext> load(File file, SensorNamespace namespace) throws Exception {

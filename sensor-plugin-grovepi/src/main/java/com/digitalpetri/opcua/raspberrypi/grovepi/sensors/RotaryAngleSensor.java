@@ -7,7 +7,7 @@ import com.digitalpetri.grovepi.GroveAnalogPin;
 import com.digitalpetri.opcua.raspberrypi.api.SensorContext;
 import com.digitalpetri.opcua.raspberrypi.grovepi.GrovePiContext;
 import com.digitalpetri.opcua.raspberrypi.grovepi.GrovePiSensor;
-import org.eclipse.milo.opcua.sdk.server.api.AddressSpace;
+import org.eclipse.milo.opcua.sdk.server.UaNodeManager;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -33,7 +33,7 @@ public class RotaryAngleSensor extends GrovePiSensor {
     public RotaryAngleSensor(GrovePiContext grovePiContext, SensorContext sensorContext) {
         super(grovePiContext, sensorContext);
 
-        AddressSpace addressSpace = sensorContext.getServer().getAddressSpace();
+        UaNodeManager nodeManager = sensorContext.getServer().getNodeManager();
 
         updateRate = sensorContext.getConfig().getDuration(
             "sensor.grove.update-rate", TimeUnit.MILLISECONDS);
@@ -52,7 +52,7 @@ public class RotaryAngleSensor extends GrovePiSensor {
             .setDataType(Identifiers.Double)
             .build();
 
-        addressSpace.addNode(sensorValueNode);
+        nodeManager.addNode(sensorValueNode);
         getSensorNode().addComponent(sensorValueNode);
 
         voltageNode = new UaVariableNode.UaVariableNodeBuilder(sensorContext.getServer())
@@ -62,7 +62,7 @@ public class RotaryAngleSensor extends GrovePiSensor {
             .setDataType(Identifiers.Double)
             .build();
 
-        addressSpace.addNode(voltageNode);
+        nodeManager.addNode(voltageNode);
         getSensorNode().addComponent(voltageNode);
 
         degreesNode = new UaVariableNode.UaVariableNodeBuilder(sensorContext.getServer())
@@ -72,7 +72,7 @@ public class RotaryAngleSensor extends GrovePiSensor {
             .setDataType(Identifiers.Double)
             .build();
 
-        addressSpace.addNode(degreesNode);
+        nodeManager.addNode(degreesNode);
         getSensorNode().addComponent(degreesNode);
 
         readSensor();
